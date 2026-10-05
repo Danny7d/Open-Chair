@@ -1,0 +1,1 @@
+function e(e){return new Worker(`/assets/unmix.worker-_Hs4an5J.js`,{name:e?.name})}export{e as default};

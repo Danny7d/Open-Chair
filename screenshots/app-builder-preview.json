@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Open Chair",
+      "hasCanvas": false,
+      "bodyTextLen": 683,
+      "bodyTextHash": "16d025a0c6df5e2fc103dad4f0830410b2e1a5507db6ae1acfa41ad4742f554c",
+      "bodyTextPrefix": "OPEN CHAIR Take the empty chair. Drop a song. Mute the part you ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Open Chair",
+      "hasCanvas": false,
+      "bodyTextLen": 697,
+      "bodyTextHash": "91d156ed935a5fdc3b3b71aa69851c60e18411786d63fa0c65a805e754dbe76e",
+      "bodyTextPrefix": "OPEN CHAIR Take the empty chair. Drop a song. Mute the part you ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
