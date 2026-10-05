@@ -96,8 +96,8 @@ export function HomeView() {
             Drop a track
           </span>
           <span className="max-w-sm text-sm leading-relaxed text-muted">
-            The mix splits on your device into lead, features, drums, bass,
-            guitar, keys, and the rest. Mute your chair. Play.
+            A quick on-device split estimates lead, features, drums, bass,
+            guitar, keys, and the rest. Results vary by mix. Mute your chair.
           </span>
         </button>
       </section>
@@ -105,7 +105,7 @@ export function HomeView() {
       <section className="flex flex-col gap-4">
         <div className="flex items-end justify-between gap-3">
           <h2 className="font-display text-2xl tracking-tight">Studio cuts</h2>
-          <p className="text-xs text-subtle">True stems. Mute is complete.</p>
+          <p className="text-xs text-subtle">Synthesized demos · full mute</p>
         </div>
         <ul className="flex flex-col gap-3">
           {STUDIO_SONGS.map((song) => {

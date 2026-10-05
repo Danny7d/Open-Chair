@@ -14,7 +14,7 @@ export const STUDIO_SONGS: StudioSong[] = [
     key: "A minor",
     duration: 0,
     kind: "studio",
-    isolation: "true",
+    isolation: "demo",
   },
   {
     id: "copper-wire",
@@ -25,7 +25,7 @@ export const STUDIO_SONGS: StudioSong[] = [
     key: "E minor",
     duration: 0,
     kind: "studio",
-    isolation: "true",
+    isolation: "demo",
   },
   {
     id: "late-fee",
@@ -36,7 +36,7 @@ export const STUDIO_SONGS: StudioSong[] = [
     key: "D dorian",
     duration: 0,
     kind: "studio",
-    isolation: "true",
+    isolation: "demo",
   },
 ];
 
@@ -808,5 +808,4 @@ export function warmupStudio(): void {
     void renderStudioSong("after-hours");
   }, 700);
 }
-
 
