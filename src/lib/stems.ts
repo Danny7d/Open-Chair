@@ -152,7 +152,7 @@ export type SongMeta = {
   key: string;
   duration: number;
   kind: MixKind;
-  isolation: "true" | "split";
+  isolation: "demo" | "split";
 };
 
 export type StemState = {

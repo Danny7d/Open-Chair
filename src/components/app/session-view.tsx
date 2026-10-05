@@ -114,7 +114,7 @@ export function SessionView() {
           </h1>
           {session.song && (
             <Badge>
-              {session.song.isolation === "true" ? "True stems" : "On-device split"}
+              {session.song.isolation === "demo" ? "Arrangement demo" : "On-device split"}
             </Badge>
           )}
         </div>
@@ -214,8 +214,8 @@ export function SessionView() {
           />
           <p className="text-xs leading-relaxed text-subtle">
             {session.song?.kind === "studio"
-              ? "Each chair is a true stem from the studio session. Mute is complete — the part is gone."
-              : "Split on-device. Vocals, drums, and bass isolate most cleanly. Stereo mixes work better than mono."}{" "}
+              ? "A synthesized arrangement for exploring the mixer. Each chair is rendered separately, so muting it removes that part completely."
+              : "Experimental spectral split, processed on this device. It estimates parts from a finished mix; results vary, and stereo files usually separate better than mono."}{" "}
             Keys 1–7 mute chairs. Space plays.
           </p>
         </>
