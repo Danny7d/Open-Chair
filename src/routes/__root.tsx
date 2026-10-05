@@ -21,7 +21,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Mute the part you want to play. Open Chair splits a song into vocals, drums, bass, guitar, and keys so you can sit in.",
+          "Mute the part you want to play. Open Chair estimates vocals, drums, bass, guitar, and keys from your song, on your device. Results vary by mix.",
       },
       { name: "theme-color", content: "#0c0c0d" },
     ],

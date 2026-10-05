@@ -1,1 +1,29 @@
+# dependencies
 node_modules/
+
+# secrets: never commit these
+.env
+.env.*
+!.env.example
+
+# build output and deploy artifacts
+dist/
+.output/
+.vercel/
+.nitro/
+.tanstack/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# App-builder workspace files (.grok/). Track only what the project uses:
+#   app-env.json   read by scripts/with-app-env.mjs to set VITE_AUTH_ENABLED
+#   skills/og/     read by the brand-check script and its tests
+.grok/*
+!.grok/app-env.json
+!.grok/skills/
+.grok/skills/*
+!.grok/skills/og/
