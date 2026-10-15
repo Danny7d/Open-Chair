@@ -32,6 +32,36 @@ function magAt(
   return spec[tt * BINS + k]!;
 }
 
+function smoothMasks(
+  masks: Record<StemId, Float32Array>,
+  frames: number,
+): void {
+  const radius = 18;
+  const row = new Float32Array(BINS);
+  const scratch = new Float32Array(BINS);
+  for (let t = 0; t < frames; t++) {
+    const base = t * BINS;
+    for (const id of STEM_IDS) {
+      const mask = masks[id];
+      for (let k = 0; k < BINS; k++) row[k] = mask[base + k]!;
+      for (let k = 0; k < BINS; k++) {
+        const a = Math.max(0, k - radius);
+        const b = Math.min(BINS - 1, k + radius);
+        let s = 0;
+        for (let j = a; j <= b; j++) s += row[j]!;
+        scratch[k] = s / (b - a + 1);
+      }
+      for (let k = 0; k < BINS; k++) mask[base + k] = scratch[k]!;
+    }
+    for (let k = 0; k < BINS; k++) {
+      let sum = 0;
+      for (const id of STEM_IDS) sum += masks[id][base + k]!;
+      const norm = sum < 1e-8 ? 1 : sum;
+      for (const id of STEM_IDS) masks[id][base + k]! /= norm;
+    }
+  }
+}
+
 /**
  * Spectral unmix: mid/side vocal extraction + harmonic/percussive split +
  * frequency masks. Isolation is strongest on vocals, drums, and bass.
@@ -161,6 +191,9 @@ export function unmix(
     return (f - lo) / (hi - lo);
   };
 
+  const prev = new Uint8Array(BINS);
+  const scores = new Float32Array(7);
+
   for (let t = 0; t < frames; t++) {
     const base = t * BINS;
     let energy = 0;
@@ -168,6 +201,11 @@ export function unmix(
     const mean = energy / BINS;
     const leadGate = mean * 1.15;
 
+    // Hard assignment: each bin goes to exactly one stem.
+    // Soft weights that sum to 1 look correct only while every fader sits at
+    // the same level — the partial masks modulate each other and cancel in
+    // the sum. Moving one uploaded fader then changes the whole mix instead
+    // of that part. Demos never hit this path; they are already isolated.
     for (let k = 0; k < BINS; k++) {
       const f = k * hzPerBin;
       const i = base + k;
@@ -176,46 +214,53 @@ export function unmix(
       const mid = 0.5 * (ml + mr);
       const side = Math.abs(ml - mr) * 0.5;
       const center = mid / (mid + side + 1e-8);
+      // |mid| equals |side| on a hard-panned source, so center sits at 0.5
+      // there and at 1 when the source is dead-center. Map that onto 0..1.
+      const centered = Math.max(0, Math.min(1, (center - 0.5) * 2));
+      const wide = 1 - centered;
 
-      const vocalBand =
-        ramp(f, 140, 220) * (1 - ramp(f, 3800, 5200));
-      const bassBand = 1 - ramp(f, 160, 280);
-      const lowMid = ramp(f, 180, 280) * (1 - ramp(f, 1400, 2200));
-      const highMid = ramp(f, 400, 700) * (1 - ramp(f, 4200, 6500));
-      const air = ramp(f, 5000, 8000);
+      const vocalBand = ramp(f, 160, 260) * (1 - ramp(f, 3400, 4800));
+      const bassW = 1 - ramp(f, 80, 240);
+      const lowMid = ramp(f, 140, 260) * (1 - ramp(f, 1600, 2800));
+      const highMid = ramp(f, 350, 700) * (1 - ramp(f, 4500, 7000));
 
       const h = harm[i]!;
       const p = perc[i]!;
+      const loud = mid > leadGate ? 1 : 0.45;
 
-      const lead =
-        center * center * center * vocalBand * h * (mid > leadGate ? 1 : 0.35);
-      const feature =
-        center * vocalBand * h * (1 - lead) * (0.45 + 0.55 * (1 - center));
-      const bass = bassBand * (0.65 + 0.35 * h) * (1 - lead * 0.25);
-      const drums =
-        p * (1 - bassBand * 0.35) * (1 - lead * 0.4) + air * p * 0.6;
-      const restH = h * (1 - lead) * (1 - feature) * (1 - bass);
-      const guitar = restH * lowMid * (0.35 + 0.65 * (1 - center));
-      const keys = restH * highMid * (1 - guitar * 0.4);
-      const other = Math.max(
-        0,
-        1 - (lead + feature + drums + bass + guitar + keys),
-      );
+      scores[0] = h * centered * centered * vocalBand * loud * 1.7;
+      scores[1] = h * vocalBand * wide * 1.45;
+      scores[2] = p * (1 - bassW * 0.8) * (p > 0.45 ? 1.7 : 0.3);
+      scores[3] = bassW * (0.55 + 0.45 * h) * 1.8;
+      scores[4] = h * lowMid * (0.25 + 0.75 * wide) * 1.25;
+      scores[5] = h * highMid * (0.35 + 0.65 * centered) * 1.15;
+      scores[6] = 0.2;
 
-      const raw = [lead, feature, drums, bass, guitar, keys, other];
-      let sum = 0;
-      for (const v of raw) sum += Math.max(0, v);
-      const norm = sum < 1e-8 ? 1 : sum;
-      masks.lead[i] = Math.max(0, lead) / norm;
-      masks.feature[i] = Math.max(0, feature) / norm;
-      masks.drums[i] = Math.max(0, drums) / norm;
-      masks.bass[i] = Math.max(0, bass) / norm;
-      masks.guitar[i] = Math.max(0, guitar) / norm;
-      masks.keys[i] = Math.max(0, keys) / norm;
-      masks.other[i] = Math.max(0, other) / norm;
+      let best = -1;
+      let bi = 6;
+      for (let s = 0; s < 7; s++) {
+        const biased = scores[s]! * (prev[k] === s ? 1.2 : 1);
+        if (biased > best) {
+          best = biased;
+          bi = s;
+        }
+      }
+      prev[k] = bi;
+      masks.lead[i] = bi === 0 ? 1 : 0;
+      masks.feature[i] = bi === 1 ? 1 : 0;
+      masks.drums[i] = bi === 2 ? 1 : 0;
+      masks.bass[i] = bi === 3 ? 1 : 0;
+      masks.guitar[i] = bi === 4 ? 1 : 0;
+      masks.keys[i] = bi === 5 ? 1 : 0;
+      masks.other[i] = bi === 6 ? 1 : 0;
     }
     if ((t & 31) === 0) report(0.6 + (t / frames) * 0.1);
   }
+
+  // Blur the on/off bins in frequency. A brick-wall mask rings in time, so
+  // each stem carries a loud copy of the whole song that only cancels while
+  // every fader is equal. Smoothing keeps the faders independent.
+  smoothMasks(masks, frames);
 
   const outLen = (frames - 1) * HOP + NFFT;
   const stems = {} as Record<StemId, Float32Array>;
